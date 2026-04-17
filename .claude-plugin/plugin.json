@@ -1,0 +1,12 @@
+{
+  "name": "llm-gateway",
+  "version": "0.1.0",
+  "description": "Unified multi-provider LLM gateway: GitHub Copilot, Kimi, MiniMax, GLM",
+  "author": {
+    "name": "fsg",
+    "email": "fsg@localhost"
+  },
+  "repository": "https://github.com/fsg/llm-gateway",
+  "license": "MIT",
+  "keywords": ["llm", "copilot", "kimi", "glm", "minimax", "gateway", "mcp"]
+}

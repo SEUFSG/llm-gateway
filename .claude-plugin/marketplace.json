@@ -1,0 +1,16 @@
+{
+  "name": "llm-gateway",
+  "description": "Unified multi-provider LLM gateway for Claude Code",
+  "owner": {
+    "name": "fsg",
+    "email": "fsg@localhost"
+  },
+  "plugins": [
+    {
+      "name": "llm-gateway",
+      "description": "Unified multi-provider LLM gateway: GitHub Copilot, Kimi, MiniMax, GLM",
+      "version": "0.1.0",
+      "source": "./"
+    }
+  ]
+}
