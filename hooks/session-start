@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CREDS_FILE="${HOME}/.llm-gateway/credentials.json"
+STATUSES=()
+
+check_provider() {
+  local name="$1"
+  local key="$2"
+  if [ -f "$CREDS_FILE" ]; then
+    if [ "$name" = "copilot" ]; then
+      local expiry
+      expiry=$(python3 -c "
+import json
+try:
+    d = json.load(open('$CREDS_FILE'))
+    print(d.get('copilot', {}).get('sessionExpiresAt', ''))
+except:
+    print('')
+" 2>/dev/null || echo "")
+      if [ -n "$expiry" ]; then
+        local now exp_ts
+        now=$(date -u +%s)
+        exp_ts=$(python3 -c "
+import datetime
+try:
+    ts = datetime.datetime.fromisoformat('$expiry'.replace('Z', '+00:00'))
+    print(int(ts.timestamp()))
+except:
+    print(0)
+" 2>/dev/null || echo "0")
+        if [ "$exp_ts" -gt "$now" ]; then
+          STATUSES+=("copilot (authenticated)")
+        else
+          STATUSES+=("copilot (token expired, run llm_login)")
+        fi
+      else
+        STATUSES+=("copilot (not authenticated)")
+      fi
+    else
+      local val
+      val=$(python3 -c "
+import json
+try:
+    d = json.load(open('$CREDS_FILE'))
+    print(d.get('$name', {}).get('$key', ''))
+except:
+    print('')
+" 2>/dev/null || echo "")
+      if [ -n "$val" ]; then
+        STATUSES+=("${name} (authenticated)")
+      else
+        STATUSES+=("${name} (not authenticated)")
+      fi
+    fi
+  else
+    STATUSES+=("${name} (not authenticated)")
+  fi
+}
+
+check_provider "copilot" "sessionToken"
+check_provider "kimi" "apiKey"
+check_provider "minimax" "apiKey"
+check_provider "glm" "apiKey"
+
+STATUS_STR=$(IFS=", "; echo "${STATUSES[*]}")
+CONTEXT="LLM Gateway providers: ${STATUS_STR}. Use llm_chat skill to chat with these models. Use llm_login skill to authenticate."
+
+printf '{"continue":true,"suppressOutput":true,"additionalContext":"%s"}' \
+  "$(echo "$CONTEXT" | sed 's/"/\\"/g')"
