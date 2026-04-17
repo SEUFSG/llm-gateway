@@ -37,7 +37,7 @@ export interface ChatResponse {
 export interface AuthResult {
   success: boolean;
   message: string;
-  expiresAt?: Date;
+  expiresAt?: string; // ISO 8601 date string
 }
 
 export interface CopilotCredentials {
@@ -57,4 +57,5 @@ export interface Credentials {
   glm?: ApiKeyCredentials;
 }
 
+/** Maps task label (e.g. "code_generation") to ordered fallback chain of fullIds (e.g. ["copilot/gpt-4o", "glm/glm-4"]) */
 export type RoutingConfig = Record<string, string[]>;
