@@ -42,4 +42,10 @@ describe("MinimaxProvider", () => {
       expect(m.fullId).toBe(`minimax/${m.id}`);
     }
   });
+
+  it("logout clears credentials", () => {
+    store.update("minimax", { apiKey: "mm-test" });
+    provider.logout();
+    expect(provider.isAuthenticated()).toBe(false);
+  });
 });

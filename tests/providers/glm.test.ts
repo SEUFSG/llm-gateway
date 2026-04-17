@@ -43,4 +43,10 @@ describe("GlmProvider", () => {
       expect(m.fullId).toBe(`glm/${m.id}`);
     }
   });
+
+  it("logout clears credentials", () => {
+    store.update("glm", { apiKey: "test.key" });
+    provider.logout();
+    expect(provider.isAuthenticated()).toBe(false);
+  });
 });
