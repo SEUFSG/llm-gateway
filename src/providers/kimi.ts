@@ -61,7 +61,7 @@ export class KimiProvider {
     this.store.clear("kimi");
   }
 
-  async refreshAuth(): Promise<void> {}  // API keys don't expire
+  async refreshAuth(): Promise<void> {}
 
   async chat(request: ChatRequest): Promise<ChatResponse> {
     const creds = this.store.load();

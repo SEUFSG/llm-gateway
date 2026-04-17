@@ -116,7 +116,6 @@ export class GlmProvider {
 
   private async generateToken(apiKey: string): Promise<string> {
     const dotIdx = apiKey.indexOf(".");
-    // If not JWT-format key, use directly
     if (dotIdx === -1) return apiKey;
 
     const id = apiKey.substring(0, dotIdx);
