@@ -23,9 +23,9 @@ export class TokenStore {
 
   save(creds: Credentials): void {
     if (!existsSync(this.dir)) {
-      mkdirSync(this.dir, { recursive: true });
+      mkdirSync(this.dir, { recursive: true, mode: 0o700 });
     }
-    writeFileSync(this.credPath, JSON.stringify(creds, null, 2), "utf-8");
+    writeFileSync(this.credPath, JSON.stringify(creds, null, 2), { encoding: "utf-8", mode: 0o600 });
   }
 
   update(provider: keyof Credentials, data: ApiKeyCredentials | CopilotCredentials): void {

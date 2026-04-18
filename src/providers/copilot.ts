@@ -3,70 +3,26 @@ import type { ModelInfo, ChatRequest, ChatResponse, AuthResult } from "../types"
 import type { TokenStore } from "../token-store";
 
 const COPILOT_MODELS: Omit<ModelInfo, "provider" | "fullId">[] = [
-  {
-    id: "gpt-4o",
-    name: "GPT-4o",
-    contextWindow: 128000,
-    maxOutput: 16384,
-    tags: ["code_generation", "reasoning", "quick_qa", "creative"],
-    description: "Strong all-around model, excellent at code and reasoning"
-  },
-  {
-    id: "gpt-4o-mini",
-    name: "GPT-4o Mini",
-    contextWindow: 128000,
-    maxOutput: 16384,
-    tags: ["quick_qa"],
-    description: "Fast and cost-effective, best for simple queries"
-  },
-  {
-    id: "o1",
-    name: "o1",
-    contextWindow: 200000,
-    maxOutput: 100000,
-    tags: ["reasoning", "math"],
-    description: "Deep reasoning model for complex problems"
-  },
-  {
-    id: "o1-mini",
-    name: "o1 Mini",
-    contextWindow: 128000,
-    maxOutput: 65536,
-    tags: ["reasoning", "math"],
-    description: "Faster reasoning model, good balance of speed and depth"
-  },
-  {
-    id: "o3-mini",
-    name: "o3 Mini",
-    contextWindow: 200000,
-    maxOutput: 100000,
-    tags: ["reasoning", "math", "code_generation"],
-    description: "Latest reasoning model, strong at math and code"
-  },
-  {
-    id: "claude-3.5-sonnet",
-    name: "Claude 3.5 Sonnet",
-    contextWindow: 200000,
-    maxOutput: 8096,
-    tags: ["code_generation", "code_review", "reasoning", "creative"],
-    description: "Anthropic Claude 3.5 Sonnet, excellent code and nuanced reasoning"
-  },
-  {
-    id: "claude-sonnet-4",
-    name: "Claude Sonnet 4",
-    contextWindow: 200000,
-    maxOutput: 16000,
-    tags: ["code_generation", "code_review", "reasoning", "creative"],
-    description: "Anthropic Claude Sonnet 4, latest Claude model via Copilot"
-  },
-  {
-    id: "gemini-2.0-flash",
-    name: "Gemini 2.0 Flash",
-    contextWindow: 1000000,
-    maxOutput: 8192,
-    tags: ["quick_qa", "long_context"],
-    description: "Google Gemini 2.0 Flash, very large context window"
-  }
+  { id: "claude-opus-4.7",        name: "Claude Opus 4.7",        contextWindow: 200000, maxOutput: 64000,  tags: ["code_generation","code_review","reasoning","creative"], description: "Anthropic Claude Opus 4.7 — most powerful" },
+  { id: "claude-opus-4.6",        name: "Claude Opus 4.6",        contextWindow: 200000, maxOutput: 64000,  tags: ["code_generation","code_review","reasoning","creative"], description: "Anthropic Claude Opus 4.6" },
+  { id: "claude-sonnet-4.6",      name: "Claude Sonnet 4.6",      contextWindow: 200000, maxOutput: 32000,  tags: ["code_generation","code_review","reasoning","creative"], description: "Anthropic Claude Sonnet 4.6" },
+  { id: "claude-sonnet-4.5",      name: "Claude Sonnet 4.5",      contextWindow: 200000, maxOutput: 32000,  tags: ["code_generation","code_review","reasoning","creative"], description: "Anthropic Claude Sonnet 4.5" },
+  { id: "claude-sonnet-4",        name: "Claude Sonnet 4",        contextWindow: 216000, maxOutput: 16000,  tags: ["code_generation","code_review","reasoning","creative"], description: "Anthropic Claude Sonnet 4" },
+  { id: "claude-opus-4.5",        name: "Claude Opus 4.5",        contextWindow: 200000, maxOutput: 32000,  tags: ["code_generation","code_review","reasoning"],           description: "Anthropic Claude Opus 4.5" },
+  { id: "claude-haiku-4.5",       name: "Claude Haiku 4.5",       contextWindow: 200000, maxOutput: 32000,  tags: ["quick_qa","code_generation"],                          description: "Anthropic Claude Haiku 4.5 — fast" },
+  { id: "gpt-5.4",                name: "GPT-5.4",                contextWindow: 400000, maxOutput: 128000, tags: ["code_generation","reasoning","math"],                   description: "OpenAI GPT-5.4" },
+  { id: "gpt-5.4-mini",           name: "GPT-5.4 mini",           contextWindow: 400000, maxOutput: 128000, tags: ["quick_qa","code_generation"],                          description: "OpenAI GPT-5.4 mini — fast" },
+  { id: "gpt-5.3-codex",          name: "GPT-5.3-Codex",          contextWindow: 400000, maxOutput: 128000, tags: ["code_generation","reasoning"],                         description: "OpenAI GPT-5.3 Codex" },
+  { id: "gpt-5.2",                name: "GPT-5.2",                contextWindow: 264000, maxOutput: 64000,  tags: ["code_generation","reasoning"],                         description: "OpenAI GPT-5.2" },
+  { id: "gpt-5-mini",             name: "GPT-5 mini",             contextWindow: 264000, maxOutput: 64000,  tags: ["quick_qa","code_generation"],                          description: "GPT-5 mini" },
+  { id: "gpt-4.1",                name: "GPT-4.1",                contextWindow: 128000, maxOutput: 16384,  tags: ["code_generation","reasoning","quick_qa"],               description: "OpenAI GPT-4.1" },
+  { id: "gpt-4o",                 name: "GPT-4o",                 contextWindow: 128000, maxOutput: 4096,   tags: ["code_generation","reasoning","quick_qa","creative"],    description: "OpenAI GPT-4o" },
+  { id: "gpt-4o-mini",            name: "GPT-4o mini",            contextWindow: 128000, maxOutput: 4096,   tags: ["quick_qa"],                                            description: "OpenAI GPT-4o mini — fast" },
+  { id: "gemini-2.5-pro",         name: "Gemini 2.5 Pro",         contextWindow: 128000, maxOutput: 64000,  tags: ["code_generation","reasoning","long_context"],           description: "Google Gemini 2.5 Pro" },
+  { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro",         contextWindow: 128000, maxOutput: 64000,  tags: ["code_generation","reasoning"],                         description: "Google Gemini 3.1 Pro (Preview)" },
+  { id: "gemini-3-flash-preview", name: "Gemini 3 Flash",         contextWindow: 128000, maxOutput: 64000,  tags: ["quick_qa","code_generation"],                          description: "Google Gemini 3 Flash (Preview)" },
+  { id: "minimax-m2.5",           name: "MiniMax M2.5 (Fast)",    contextWindow: 131000, maxOutput: 40000,  tags: ["chinese_writing","quick_qa"],                          description: "MiniMax M2.5 via Copilot" },
+  { id: "grok-code-fast-1",       name: "Grok Code Fast 1",       contextWindow: 128000, maxOutput: 64000,  tags: ["code_generation"],                                     description: "xAI Grok Code Fast 1" },
 ];
 
 export class CopilotProvider implements LLMProvider {
@@ -79,6 +35,9 @@ export class CopilotProvider implements LLMProvider {
   private readonly ACCESS_TOKEN_URL = "https://github.com/login/oauth/access_token";
   private readonly SESSION_TOKEN_URL = "https://api.github.com/copilot_internal/v2/token";
   private readonly CHAT_URL = "https://api.githubcopilot.com/chat/completions";
+  private readonly MODELS_URL = "https://api.githubcopilot.com/models";
+
+  private modelCache: { models: ModelInfo[]; ts: number } | null = null;
 
   constructor(private readonly store: TokenStore) {}
 
@@ -90,11 +49,62 @@ export class CopilotProvider implements LLMProvider {
   }
 
   listModels(): ModelInfo[] {
-    return COPILOT_MODELS.map(m => ({
-      ...m,
-      provider: "copilot",
-      fullId: `copilot/${m.id}`
-    }));
+    if (this.modelCache) return this.modelCache.models;
+    return COPILOT_MODELS.map(m => ({ ...m, provider: "copilot", fullId: `copilot/${m.id}` }));
+  }
+
+  async fetchModels(): Promise<ModelInfo[]> {
+    if (this.modelCache && Date.now() - this.modelCache.ts < 5 * 60 * 1000) return this.modelCache.models;
+    const creds = this.store.load();
+    if (!creds.copilot?.sessionToken) return this.listModels();
+    try {
+      const resp = await fetch(this.MODELS_URL, {
+        headers: {
+          "Authorization": `Bearer ${creds.copilot.sessionToken}`,
+          "Editor-Version": "vscode/1.85.0",
+          "Copilot-Integration-Id": "vscode-chat"
+        }
+      });
+      if (!resp.ok) return this.listModels();
+      const d = await resp.json() as { data: any[] };
+      const models = (d.data ?? [])
+        .filter((m: any) =>
+          m.capabilities?.type === "chat" &&
+          m.model_picker_enabled !== false &&
+          !m.id.startsWith("accounts/") &&
+          !m.id.includes("embedding") &&
+          !m.id.includes("oswe") &&
+          !m.id.includes("search") &&
+          !m.id.includes("router")
+        )
+        .map((m: any): ModelInfo => {
+          const lim = m.capabilities?.limits ?? {};
+          return {
+            id: m.id, provider: "copilot", fullId: `copilot/${m.id}`,
+            name: m.name ?? m.id,
+            contextWindow: lim.max_context_window_tokens ?? 128000,
+            maxOutput: lim.max_output_tokens ?? 4096,
+            tags: this.inferTags(m),
+            description: `${m.vendor ? m.vendor + " " : ""}${m.name ?? m.id}`
+          };
+        });
+      this.modelCache = { models, ts: Date.now() };
+      return models;
+    } catch {
+      return this.listModels();
+    }
+  }
+
+  private inferTags(m: any): string[] {
+    const id = m.id.toLowerCase();
+    const tags: string[] = [];
+    if (id.includes("opus") || id.includes("5.4") || id.includes("pro") || id.includes("codex")) tags.push("code_review", "reasoning");
+    if (id.includes("claude") || id.includes("gpt") || id.includes("gemini") || id.includes("grok")) tags.push("code_generation");
+    if (id.includes("mini") || id.includes("flash") || id.includes("haiku") || id.includes("fast")) tags.push("quick_qa");
+    if (id.includes("minimax") || id.includes("glm") || id.includes("kimi")) tags.push("chinese_writing");
+    if ((m.capabilities?.limits?.max_context_window_tokens ?? 0) >= 200000) tags.push("long_context");
+    if (m.capabilities?.supports?.reasoning_effort) tags.push("math");
+    return [...new Set(tags)];
   }
 
   async login(): Promise<AuthResult> {

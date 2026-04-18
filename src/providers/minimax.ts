@@ -2,22 +2,10 @@ import type { ModelInfo, ChatRequest, ChatResponse, AuthResult } from "../types"
 import type { TokenStore } from "../token-store";
 
 const MINIMAX_MODELS: Omit<ModelInfo, "provider" | "fullId">[] = [
-  {
-    id: "abab6.5-chat",
-    name: "abab6.5",
-    contextWindow: 245760,
-    maxOutput: 8192,
-    tags: ["chinese_writing", "quick_qa", "creative"],
-    description: "MiniMax flagship model, strong Chinese, large context"
-  },
-  {
-    id: "abab5.5-chat",
-    name: "abab5.5",
-    contextWindow: 16384,
-    maxOutput: 4096,
-    tags: ["chinese_writing", "quick_qa"],
-    description: "MiniMax standard model, fast and efficient"
-  }
+  { id: "MiniMax-Text-01",  name: "MiniMax Text-01",  contextWindow: 1000000, maxOutput: 16384, tags: ["chinese_writing","long_context","creative"],  description: "MiniMax Text-01 旗舰，100万上下文" },
+  { id: "abab6.5s-chat",   name: "abab6.5s",         contextWindow: 245760,  maxOutput: 8192,  tags: ["chinese_writing","quick_qa","creative"],       description: "MiniMax abab6.5s 快速版" },
+  { id: "abab6.5-chat",    name: "abab6.5",          contextWindow: 245760,  maxOutput: 8192,  tags: ["chinese_writing","quick_qa","creative"],       description: "MiniMax abab6.5 旗舰" },
+  { id: "abab5.5-chat",    name: "abab5.5",          contextWindow: 16384,   maxOutput: 4096,  tags: ["chinese_writing","quick_qa"],                  description: "MiniMax abab5.5 标准" },
 ];
 
 export class MinimaxProvider {

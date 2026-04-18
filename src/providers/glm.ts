@@ -2,30 +2,12 @@ import type { ModelInfo, ChatRequest, ChatResponse, AuthResult } from "../types"
 import type { TokenStore } from "../token-store";
 
 const GLM_MODELS: Omit<ModelInfo, "provider" | "fullId">[] = [
-  {
-    id: "glm-4",
-    name: "GLM-4",
-    contextWindow: 128000,
-    maxOutput: 8192,
-    tags: ["code_generation", "chinese_writing", "reasoning"],
-    description: "Zhipu GLM-4 flagship, strong Chinese and code"
-  },
-  {
-    id: "glm-4-flash",
-    name: "GLM-4 Flash",
-    contextWindow: 128000,
-    maxOutput: 8192,
-    tags: ["quick_qa", "chinese_writing"],
-    description: "Zhipu GLM-4 Flash, fast and free tier available"
-  },
-  {
-    id: "glm-3-turbo",
-    name: "GLM-3 Turbo",
-    contextWindow: 128000,
-    maxOutput: 8192,
-    tags: ["quick_qa", "chinese_writing"],
-    description: "Zhipu GLM-3 Turbo, cost-effective Chinese model"
-  }
+  { id: "glm-z1-preview",  name: "GLM-Z1 Preview",  contextWindow: 128000, maxOutput: 30720, tags: ["reasoning","math","code_generation","chinese_writing"], description: "GLM-Z1 深度思考旗舰" },
+  { id: "glm-z1-air",      name: "GLM-Z1 Air",      contextWindow: 128000, maxOutput: 30720, tags: ["reasoning","math","chinese_writing"],                   description: "GLM-Z1 Air 轻量思考" },
+  { id: "glm-4-plus",      name: "GLM-4 Plus",      contextWindow: 128000, maxOutput: 8192,  tags: ["code_generation","chinese_writing","reasoning"],        description: "GLM-4 Plus 增强版" },
+  { id: "glm-4-long",      name: "GLM-4 Long",      contextWindow: 1000000, maxOutput: 8192, tags: ["long_context","chinese_writing"],                       description: "GLM-4 Long 超长上下文" },
+  { id: "glm-4-air",       name: "GLM-4 Air",       contextWindow: 128000, maxOutput: 8192,  tags: ["code_generation","chinese_writing","quick_qa"],         description: "GLM-4 Air 高性价比" },
+  { id: "glm-4-flash",     name: "GLM-4 Flash",     contextWindow: 128000, maxOutput: 8192,  tags: ["quick_qa","chinese_writing"],                           description: "GLM-4 Flash 免费快速" },
 ];
 
 export class GlmProvider {
@@ -114,7 +96,7 @@ export class GlmProvider {
     };
   }
 
-  private async generateToken(apiKey: string): Promise<string> {
+  async generateToken(apiKey: string): Promise<string> {
     const dotIdx = apiKey.indexOf(".");
     if (dotIdx === -1) return apiKey;
 
@@ -134,7 +116,10 @@ export class GlmProvider {
       "raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
     );
     const sig = await crypto.subtle.sign("HMAC", key, enc.encode(signingInput));
-    const sigB64 = btoa(String.fromCharCode(...new Uint8Array(sig)))
+    const sigBytes = new Uint8Array(sig);
+    let sigBin = "";
+    for (let i = 0; i < sigBytes.length; i++) sigBin += String.fromCharCode(sigBytes[i]);
+    const sigB64 = btoa(sigBin)
       .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 
     return `${signingInput}.${sigB64}`;

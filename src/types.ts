@@ -37,7 +37,10 @@ export interface ChatResponse {
 export interface AuthResult {
   success: boolean;
   message: string;
-  expiresAt?: string; // ISO 8601 date string
+  expiresAt?: string;
+  /** Present when action=pending: user must visit verificationUrl and enter userCode */
+  userCode?: string;
+  verificationUrl?: string;
 }
 
 export interface CopilotCredentials {
@@ -55,6 +58,7 @@ export interface Credentials {
   kimi?: ApiKeyCredentials;
   minimax?: ApiKeyCredentials;
   glm?: ApiKeyCredentials;
+  qwen?: ApiKeyCredentials;
 }
 
 /** Maps task label (e.g. "code_generation") to ordered fallback chain of fullIds (e.g. ["copilot/gpt-4o", "glm/glm-4"]) */

@@ -4,31 +4,41 @@ set -euo pipefail
 CREDS_FILE="${HOME}/.llm-gateway/credentials.json"
 STATUSES=()
 
+# 用 bun/node 解析 JSON，避免依赖 python3
+read_json() {
+  local file="$1"
+  local script="$2"
+  if command -v bun &>/dev/null; then
+    bun -e "$script" 2>/dev/null || echo ""
+  elif command -v node &>/dev/null; then
+    node -e "$script" 2>/dev/null || echo ""
+  else
+    echo ""
+  fi
+}
+
 check_provider() {
   local name="$1"
   local key="$2"
   if [ -f "$CREDS_FILE" ]; then
     if [ "$name" = "copilot" ]; then
       local expiry
-      expiry=$(python3 -c "
-import json
-try:
-    d = json.load(open('$CREDS_FILE'))
-    print(d.get('copilot', {}).get('sessionExpiresAt', ''))
-except:
-    print('')
-" 2>/dev/null || echo "")
+      expiry=$(read_json "$CREDS_FILE" "
+try {
+  const d = JSON.parse(require('fs').readFileSync('$CREDS_FILE','utf8'));
+  process.stdout.write(d?.copilot?.sessionExpiresAt ?? '');
+} catch { process.stdout.write(''); }
+")
       if [ -n "$expiry" ]; then
         local now exp_ts
         now=$(date -u +%s)
-        exp_ts=$(python3 -c "
-import datetime
-try:
-    ts = datetime.datetime.fromisoformat('$expiry'.replace('Z', '+00:00'))
-    print(int(ts.timestamp()))
-except:
-    print(0)
-" 2>/dev/null || echo "0")
+        exp_ts=$(read_json "$CREDS_FILE" "
+try {
+  const ts = new Date('$expiry').getTime();
+  process.stdout.write(isNaN(ts) ? '0' : String(Math.floor(ts/1000)));
+} catch { process.stdout.write('0'); }
+")
+        exp_ts="${exp_ts:-0}"
         if [ "$exp_ts" -gt "$now" ]; then
           STATUSES+=("copilot (authenticated)")
         else
@@ -39,14 +49,12 @@ except:
       fi
     else
       local val
-      val=$(python3 -c "
-import json
-try:
-    d = json.load(open('$CREDS_FILE'))
-    print(d.get('$name', {}).get('$key', ''))
-except:
-    print('')
-" 2>/dev/null || echo "")
+      val=$(read_json "$CREDS_FILE" "
+try {
+  const d = JSON.parse(require('fs').readFileSync('$CREDS_FILE','utf8'));
+  process.stdout.write(d?.${name}?.${key} ?? '');
+} catch { process.stdout.write(''); }
+")
       if [ -n "$val" ]; then
         STATUSES+=("${name} (authenticated)")
       else

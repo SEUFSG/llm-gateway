@@ -13,15 +13,15 @@ import type { RoutingConfig } from "./types";
 
 function loadRoutingConfig(): RoutingConfig {
   const defaultRouting: RoutingConfig = {
-    code_generation:  ["copilot/gpt-4o", "copilot/claude-sonnet-4", "glm/glm-4"],
-    code_review:      ["copilot/claude-sonnet-4", "copilot/gpt-4o"],
-    reasoning:        ["copilot/o3-mini", "copilot/gpt-4o"],
-    chinese_writing:  ["kimi/moonshot-v1-128k", "glm/glm-4", "minimax/abab6.5-chat"],
-    translation:      ["kimi/moonshot-v1-128k", "copilot/gpt-4o"],
-    quick_qa:         ["copilot/gpt-4o-mini", "minimax/abab6.5-chat"],
-    math:             ["copilot/o3-mini", "copilot/gpt-4o"],
-    creative:         ["copilot/gpt-4o", "kimi/moonshot-v1-128k"],
-    long_context:     ["kimi/moonshot-v1-128k", "copilot/claude-sonnet-4"]
+    code_generation:  ["copilot/claude-sonnet-4.6", "copilot/gpt-5.4", "qwen/qwen-max", "glm/glm-4-plus"],
+    code_review:      ["copilot/claude-opus-4.7", "copilot/claude-sonnet-4.6", "qwen/qwen-max"],
+    reasoning:        ["copilot/claude-opus-4.7", "copilot/gpt-5.4", "qwen/qwen3-235b-a22b"],
+    chinese_writing:  ["kimi/kimi-latest", "qwen/qwen-plus", "glm/glm-4-plus", "minimax/MiniMax-Text-01"],
+    translation:      ["kimi/kimi-latest", "qwen/qwen-plus", "copilot/claude-sonnet-4.6"],
+    quick_qa:         ["copilot/claude-haiku-4.5", "qwen/qwen-turbo", "glm/glm-4-flash"],
+    math:             ["copilot/claude-opus-4.7", "qwen/qwen3-235b-a22b", "copilot/gpt-5.4"],
+    creative:         ["copilot/claude-sonnet-4.6", "kimi/kimi-latest", "minimax/MiniMax-Text-01"],
+    long_context:     ["minimax/MiniMax-Text-01", "qwen/qwen-long", "kimi/moonshot-v1-128k", "glm/glm-4-long"]
   };
 
   try {
@@ -166,8 +166,8 @@ if (import.meta.main) {
         inputSchema: {
           type: "object",
           properties: {
-            provider: { type: "string", enum: ["copilot", "kimi", "minimax", "glm"] },
-            apiKey: { type: "string", description: "Required for kimi, minimax, glm" }
+            provider: { type: "string", enum: ["copilot", "kimi", "minimax", "glm", "qwen"] },
+            apiKey: { type: "string", description: "Required for kimi, minimax, glm, qwen" }
           },
           required: ["provider"]
         }
@@ -178,7 +178,7 @@ if (import.meta.main) {
         inputSchema: {
           type: "object",
           properties: {
-            provider: { type: "string", enum: ["copilot", "kimi", "minimax", "glm"] }
+            provider: { type: "string", enum: ["copilot", "kimi", "minimax", "glm", "qwen"] }
           },
           required: ["provider"]
         }

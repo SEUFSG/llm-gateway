@@ -2,30 +2,11 @@ import type { ModelInfo, ChatRequest, ChatResponse, AuthResult } from "../types"
 import type { TokenStore } from "../token-store";
 
 const KIMI_MODELS: Omit<ModelInfo, "provider" | "fullId">[] = [
-  {
-    id: "moonshot-v1-8k",
-    name: "Moonshot v1 8K",
-    contextWindow: 8000,
-    maxOutput: 4096,
-    tags: ["chinese_writing", "translation", "quick_qa"],
-    description: "Kimi 8K context, fast responses, strong Chinese"
-  },
-  {
-    id: "moonshot-v1-32k",
-    name: "Moonshot v1 32K",
-    contextWindow: 32000,
-    maxOutput: 8192,
-    tags: ["chinese_writing", "translation"],
-    description: "Kimi 32K context, balanced speed and depth"
-  },
-  {
-    id: "moonshot-v1-128k",
-    name: "Moonshot v1 128K",
-    contextWindow: 128000,
-    maxOutput: 16384,
-    tags: ["chinese_writing", "translation", "long_context"],
-    description: "Kimi 128K context, best for long Chinese documents"
-  }
+  { id: "kimi-latest",             name: "Kimi Latest",          contextWindow: 131072,  maxOutput: 16384, tags: ["chinese_writing","translation","code_generation","reasoning"], description: "Kimi 最新旗舰模型" },
+  { id: "kimi-thinking-preview",   name: "Kimi Thinking",        contextWindow: 131072,  maxOutput: 16384, tags: ["reasoning","math","chinese_writing"],                          description: "Kimi 深度思考模型" },
+  { id: "moonshot-v1-128k",        name: "Moonshot v1 128K",     contextWindow: 128000,  maxOutput: 16384, tags: ["chinese_writing","translation","long_context"],                description: "Kimi 128K 长文档" },
+  { id: "moonshot-v1-32k",         name: "Moonshot v1 32K",      contextWindow: 32000,   maxOutput: 8192,  tags: ["chinese_writing","translation"],                               description: "Kimi 32K 均衡" },
+  { id: "moonshot-v1-8k",          name: "Moonshot v1 8K",       contextWindow: 8000,    maxOutput: 4096,  tags: ["chinese_writing","quick_qa"],                                  description: "Kimi 8K 快速" },
 ];
 
 export class KimiProvider {
