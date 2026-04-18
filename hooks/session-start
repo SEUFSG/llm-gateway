@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CREDS_FILE="${HOME}/.llm-gateway/credentials.json"
+STATUSES=()
+
+# 用 bun/node 解析 JSON，避免依赖 python3
+read_json() {
+  local file="$1"
+  local script="$2"
+  if command -v bun &>/dev/null; then
+    bun -e "$script" 2>/dev/null || echo ""
+  elif command -v node &>/dev/null; then
+    node -e "$script" 2>/dev/null || echo ""
+  else
+    echo ""
+  fi
+}
+
+check_provider() {
+  local name="$1"
+  local key="$2"
+  if [ -f "$CREDS_FILE" ]; then
+    if [ "$name" = "copilot" ]; then
+      local expiry
+      expiry=$(read_json "$CREDS_FILE" "
+try {
+  const d = JSON.parse(require('fs').readFileSync('$CREDS_FILE','utf8'));
+  process.stdout.write(d?.copilot?.sessionExpiresAt ?? '');
+} catch { process.stdout.write(''); }
+")
+      if [ -n "$expiry" ]; then
+        local now exp_ts
+        now=$(date -u +%s)
+        exp_ts=$(read_json "$CREDS_FILE" "
+try {
+  const ts = new Date('$expiry').getTime();
+  process.stdout.write(isNaN(ts) ? '0' : String(Math.floor(ts/1000)));
+} catch { process.stdout.write('0'); }
+")
+        exp_ts="${exp_ts:-0}"
+        if [ "$exp_ts" -gt "$now" ]; then
+          STATUSES+=("copilot (authenticated)")
+        else
+          STATUSES+=("copilot (token expired, run llm_login)")
+        fi
+      else
+        STATUSES+=("copilot (not authenticated)")
+      fi
+    else
+      local val
+      val=$(read_json "$CREDS_FILE" "
+try {
+  const d = JSON.parse(require('fs').readFileSync('$CREDS_FILE','utf8'));
+  process.stdout.write(d?.${name}?.${key} ?? '');
+} catch { process.stdout.write(''); }
+")
+      if [ -n "$val" ]; then
+        STATUSES+=("${name} (authenticated)")
+      else
+        STATUSES+=("${name} (not authenticated)")
+      fi
+    fi
+  else
+    STATUSES+=("${name} (not authenticated)")
+  fi
+}
+
+check_provider "copilot" "sessionToken"
+check_provider "kimi" "apiKey"
+check_provider "minimax" "apiKey"
+check_provider "glm" "apiKey"
+
+STATUS_STR=$(IFS=", "; echo "${STATUSES[*]}")
+CONTEXT="LLM Gateway providers: ${STATUS_STR}. Use llm_chat skill to chat with these models. Use llm_login skill to authenticate."
+
+printf '{"continue":true,"suppressOutput":true,"additionalContext":"%s"}' \
+  "$(echo "$CONTEXT" | sed 's/"/\\"/g')"
