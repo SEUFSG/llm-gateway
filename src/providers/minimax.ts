@@ -2,10 +2,10 @@ import type { ModelInfo, ChatRequest, ChatResponse, AuthResult } from "../types"
 import type { TokenStore } from "../token-store";
 
 const MINIMAX_MODELS: Omit<ModelInfo, "provider" | "fullId">[] = [
-  { id: "MiniMax-Text-01",  name: "MiniMax Text-01",  contextWindow: 1000000, maxOutput: 16384, tags: ["chinese_writing","long_context","creative"],  description: "MiniMax Text-01 旗舰，100万上下文" },
-  { id: "abab6.5s-chat",   name: "abab6.5s",         contextWindow: 245760,  maxOutput: 8192,  tags: ["chinese_writing","quick_qa","creative"],       description: "MiniMax abab6.5s 快速版" },
-  { id: "abab6.5-chat",    name: "abab6.5",          contextWindow: 245760,  maxOutput: 8192,  tags: ["chinese_writing","quick_qa","creative"],       description: "MiniMax abab6.5 旗舰" },
-  { id: "abab5.5-chat",    name: "abab5.5",          contextWindow: 16384,   maxOutput: 4096,  tags: ["chinese_writing","quick_qa"],                  description: "MiniMax abab5.5 标准" },
+  { id: "MiniMax-M2.7",    name: "MiniMax M2.7",     contextWindow: 1000000, maxOutput: 32768, tags: ["chinese_writing","reasoning","code_generation","creative"], description: "MiniMax M2.7 最新旗舰" },
+  { id: "MiniMax-Text-01", name: "MiniMax Text-01",  contextWindow: 1000000, maxOutput: 16384, tags: ["chinese_writing","long_context","creative"],               description: "MiniMax Text-01，100万上下文" },
+  { id: "abab6.5s-chat",   name: "abab6.5s",         contextWindow: 245760,  maxOutput: 8192,  tags: ["chinese_writing","quick_qa","creative"],                   description: "MiniMax abab6.5s 快速版" },
+  { id: "abab6.5-chat",    name: "abab6.5",          contextWindow: 245760,  maxOutput: 8192,  tags: ["chinese_writing","quick_qa","creative"],                   description: "MiniMax abab6.5 旗舰" },
 ];
 
 export class MinimaxProvider {
@@ -13,7 +13,7 @@ export class MinimaxProvider {
   readonly displayName = "MiniMax";
   readonly authType = "api_key" as const;
 
-  private readonly API_URL = "https://api.minimax.chat/v1/text/chatcompletion_v2";
+  private readonly API_URL = "https://platform.minimax.io/v1/chat/completions";
 
   constructor(private readonly store: TokenStore) {}
 
@@ -27,14 +27,14 @@ export class MinimaxProvider {
   }
 
   async login(apiKey: string): Promise<AuthResult> {
-    const resp = await fetch("https://api.minimax.chat/v1/text/chatcompletion_v2", {
+    const resp = await fetch(this.API_URL, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "abab5.5-chat",
+        model: "MiniMax-M2.7",
         messages: [{ role: "user", content: "hi" }],
         max_tokens: 1
       })
@@ -66,7 +66,7 @@ export class MinimaxProvider {
         model: request.model,
         messages: request.messages,
         temperature: request.temperature ?? 0.7,
-        tokens_to_generate: request.maxTokens ?? 4096
+        max_tokens: request.maxTokens ?? 4096
       })
     });
 

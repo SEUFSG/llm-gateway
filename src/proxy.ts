@@ -89,8 +89,7 @@ async function routeToProvider(providerName: string, modelId: string, openaiBody
   if (providerName === "minimax") {
     if (!creds.minimax?.apiKey) throw new Error("MiniMax not authenticated");
     const body = { ...openaiBody, model: modelId };
-    // MiniMax v2 uses max_tokens (same as OpenAI), but older endpoint used tokens_to_generate
-    return fetch("https://api.minimax.chat/v1/text/chatcompletion_v2", {
+    return fetch("https://platform.minimax.io/v1/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${creds.minimax.apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify(body)
