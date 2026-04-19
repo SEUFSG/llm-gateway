@@ -1,13 +1,37 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CREDS_FILE="${HOME}/.llm-gateway/credentials.json"
+PROXY_PORT="${LLM_PROXY_PORT:-3456}"
+PROXY_PID_FILE="${HOME}/.llm-gateway/proxy.pid"
+
+# --- Start proxy server if not already running ---
+start_proxy() {
+  mkdir -p "${HOME}/.llm-gateway"
+
+  # Check if already running
+  if [ -f "$PROXY_PID_FILE" ]; then
+    local pid
+    pid=$(cat "$PROXY_PID_FILE")
+    if kill -0 "$pid" 2>/dev/null; then
+      return 0
+    fi
+  fi
+
+  # Start in background
+  nohup bun "${PLUGIN_DIR}/src/proxy.ts" \
+    >"${HOME}/.llm-gateway/proxy.log" 2>&1 &
+  echo $! > "$PROXY_PID_FILE"
+}
+
+start_proxy
+
+# --- Build provider status context ---
 STATUSES=()
 
-# 用 bun/node 解析 JSON，避免依赖 python3
 read_json() {
-  local file="$1"
-  local script="$2"
+  local script="$1"
   if command -v bun &>/dev/null; then
     bun -e "$script" 2>/dev/null || echo ""
   elif command -v node &>/dev/null; then
@@ -17,62 +41,51 @@ read_json() {
   fi
 }
 
-check_provider() {
-  local name="$1"
-  local key="$2"
-  if [ -f "$CREDS_FILE" ]; then
-    if [ "$name" = "copilot" ]; then
-      local expiry
-      expiry=$(read_json "$CREDS_FILE" "
+if [ -f "$CREDS_FILE" ]; then
+  # Copilot: check session expiry
+  expiry=$(read_json "
 try {
-  const d = JSON.parse(require('fs').readFileSync('$CREDS_FILE','utf8'));
+  const d = JSON.parse(require('fs').readFileSync('${CREDS_FILE}','utf8'));
   process.stdout.write(d?.copilot?.sessionExpiresAt ?? '');
 } catch { process.stdout.write(''); }
 ")
-      if [ -n "$expiry" ]; then
-        local now exp_ts
-        now=$(date -u +%s)
-        exp_ts=$(read_json "$CREDS_FILE" "
+  if [ -n "$expiry" ]; then
+    now=$(date -u +%s)
+    exp_ts=$(read_json "
 try {
-  const ts = new Date('$expiry').getTime();
+  const ts = new Date('${expiry}').getTime();
   process.stdout.write(isNaN(ts) ? '0' : String(Math.floor(ts/1000)));
 } catch { process.stdout.write('0'); }
 ")
-        exp_ts="${exp_ts:-0}"
-        if [ "$exp_ts" -gt "$now" ]; then
-          STATUSES+=("copilot (authenticated)")
-        else
-          STATUSES+=("copilot (token expired, run llm_login)")
-        fi
-      else
-        STATUSES+=("copilot (not authenticated)")
-      fi
+    exp_ts="${exp_ts:-0}"
+    if [ "$exp_ts" -gt "$now" ]; then
+      STATUSES+=("copilot:ok")
     else
-      local val
-      val=$(read_json "$CREDS_FILE" "
-try {
-  const d = JSON.parse(require('fs').readFileSync('$CREDS_FILE','utf8'));
-  process.stdout.write(d?.${name}?.${key} ?? '');
-} catch { process.stdout.write(''); }
-")
-      if [ -n "$val" ]; then
-        STATUSES+=("${name} (authenticated)")
-      else
-        STATUSES+=("${name} (not authenticated)")
-      fi
+      STATUSES+=("copilot:expired")
     fi
   else
-    STATUSES+=("${name} (not authenticated)")
+    STATUSES+=("copilot:none")
   fi
-}
 
-check_provider "copilot" "sessionToken"
-check_provider "kimi" "apiKey"
-check_provider "minimax" "apiKey"
-check_provider "glm" "apiKey"
+  for prov in kimi minimax glm qwen; do
+    val=$(read_json "
+try {
+  const d = JSON.parse(require('fs').readFileSync('${CREDS_FILE}','utf8'));
+  process.stdout.write(d?.${prov}?.apiKey ?? '');
+} catch { process.stdout.write(''); }
+")
+    if [ -n "$val" ]; then
+      STATUSES+=("${prov}:ok")
+    else
+      STATUSES+=("${prov}:none")
+    fi
+  done
+else
+  STATUSES=("copilot:none" "kimi:none" "minimax:none" "glm:none" "qwen:none")
+fi
 
 STATUS_STR=$(IFS=", "; echo "${STATUSES[*]}")
-CONTEXT="LLM Gateway providers: ${STATUS_STR}. Use llm_chat skill to chat with these models. Use llm_login skill to authenticate."
+CONTEXT="LLM Gateway proxy running on port ${PROXY_PORT}. Provider auth: ${STATUS_STR}. Use /llm-login to authenticate a provider, then /model to select a model."
 
 printf '{"continue":true,"suppressOutput":true,"additionalContext":"%s"}' \
   "$(echo "$CONTEXT" | sed 's/"/\\"/g')"
