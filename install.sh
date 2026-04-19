@@ -12,12 +12,13 @@ if [ -d "$INSTALL_DIR/.git" ]; then
   echo "→ Updating existing installation at ${INSTALL_DIR}..."
   git -C "$INSTALL_DIR" pull --ff-only
 else
-  # If running from a local clone (not curl pipe), just symlink/copy
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || echo "")"
+  # If running from a local clone (script invoked directly, not piped from curl)
+  SCRIPT_DIR=""
+  if [ -n "${BASH_SOURCE[0]:-}" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || echo "")"
+  fi
   if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/src/server.ts" ] && [ "$SCRIPT_DIR" != "$INSTALL_DIR" ]; then
     echo "→ Installing from local source at ${SCRIPT_DIR}..."
-    mkdir -p "$(dirname "$INSTALL_DIR")"
-    # Use the local directory directly (avoid copying)
     INSTALL_DIR="$SCRIPT_DIR"
   else
     echo "→ Cloning from ${REPO_URL}..."
