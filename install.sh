@@ -89,13 +89,36 @@ for skill_dir in "${INSTALL_DIR}/skills"/*/; do
   fi
 done
 
-# 6. Make hook executable
+# 6. Install llm-auth CLI to ~/.local/bin/
+mkdir -p "${HOME}/.local/bin"
+cat > "${HOME}/.local/bin/llm-auth" <<EOF
+#!/usr/bin/env bash
+exec bun "${INSTALL_DIR}/src/cli.ts" "\$@"
+EOF
+chmod +x "${HOME}/.local/bin/llm-auth"
+echo "✓ llm-auth CLI installed"
+
+# Ensure ~/.local/bin is in PATH (add to shell rc if missing)
+for rc in "${HOME}/.bashrc" "${HOME}/.zshrc"; do
+  if [ -f "$rc" ] && ! grep -q '\.local/bin' "$rc"; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$rc"
+    echo "✓ Added ~/.local/bin to PATH in $(basename $rc)"
+  fi
+done
+
+# 7. Make hook executable
 chmod +x "${INSTALL_DIR}/hooks/session-start"
 echo "✓ Hooks configured"
 
 echo ""
 echo "✅ llm-gateway installed!"
 echo ""
-echo "Restart Claude Code, then:"
-echo "  /llm-login   — authenticate a provider (Copilot OAuth / API key)"
-echo "  /model       — pick a model from all authenticated providers"
+echo "Before starting Claude Code, authenticate providers:"
+echo "  llm-auth setup              — interactive setup for all providers"
+echo "  llm-auth login copilot      — GitHub Copilot (OAuth)"
+echo "  llm-auth login kimi --key <key>"
+echo ""
+echo "Then start Claude Code with any model:"
+echo "  llm-auth models             — list all available models"
+echo "  claude --model copilot/gpt-4o"
+echo "  claude --model copilot/claude-sonnet-4.6"
