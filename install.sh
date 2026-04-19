@@ -79,7 +79,17 @@ else
   echo "⚠ Could not configure settings.json: bun/node not found"
 fi
 
-# 5. Make hook executable
+# 5. Install slash commands to ~/.claude/commands/
+mkdir -p "${HOME}/.claude/commands"
+for skill_dir in "${INSTALL_DIR}/skills"/*/; do
+  skill_name="$(basename "$skill_dir")"
+  if [ -f "${skill_dir}SKILL.md" ]; then
+    cp "${skill_dir}SKILL.md" "${HOME}/.claude/commands/${skill_name}.md"
+    echo "✓ Installed /${skill_name} command"
+  fi
+done
+
+# 6. Make hook executable
 chmod +x "${INSTALL_DIR}/hooks/session-start"
 echo "✓ Hooks configured"
 
