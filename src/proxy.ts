@@ -65,6 +65,13 @@ function stripPrefix(model: string): string {
   return model;
 }
 
+// Normalize Anthropic-style model IDs (dashes) to Copilot-style (dots)
+// e.g. claude-sonnet-4-6 → claude-sonnet-4.6, claude-opus-4-7 → claude-opus-4.7
+function normalizeCopilotModel(model: string): string {
+  // Match patterns like claude-xxx-4-6, claude-xxx-4-7, claude-xxx-4-5
+  return model.replace(/^(claude-(?:opus|sonnet|haiku)-\d+)-(\d+)$/, "$1.$2");
+}
+
 // Route a chat request to the appropriate provider's API
 // Returns a fetch Response in OpenAI format (all providers use OpenAI-compatible APIs)
 async function routeToProvider(providerName: string, modelId: string, openaiBody: any): Promise<Response> {
@@ -292,12 +299,14 @@ Bun.serve({
 
     // GET /v1/models — Claude Code /model command uses this
     if (req.method === "GET" && url.pathname === "/v1/models") {
-      // Copilot models (dynamic)
+      // Copilot models (dynamic) — add copilot/ prefix for consistency
       let copilotModels: any[] = [];
       try {
         const token = await getCopilotToken();
-        copilotModels = (await fetchCopilotModels(token)).map(m => ({
-          id: m.id, display_name: m.name ?? m.id, type: "model", created_at: "2025-01-01T00:00:00Z"
+        const raw = await fetchCopilotModels(token);
+        copilotModels = raw.map((m: any) => ({
+          ...m,
+          id: m.id.startsWith("copilot/") ? m.id : `copilot/${m.id}`,
         }));
       } catch {}
 
@@ -306,13 +315,17 @@ Bun.serve({
         .filter(p => p.name !== "copilot")
         .flatMap(p => p.listModels().map(m => ({
           id: m.fullId,
+          object: "model",
+          name: `[${p.displayName}] ${m.name}`,
           display_name: `[${p.displayName}] ${m.name}`,
           type: "model",
-          created_at: "2025-01-01T00:00:00Z"
+          created_at: "2025-01-01T00:00:00Z",
+          model_picker_enabled: true,
+          model_picker_category: "versatile"
         })));
 
       const data = [...copilotModels, ...otherModels];
-      return new Response(JSON.stringify({ data, has_more: false, first_id: data[0]?.id ?? null, last_id: data[data.length - 1]?.id ?? null }), {
+      return new Response(JSON.stringify({ object: "list", data, has_more: false, first_id: data[0]?.id ?? null, last_id: data[data.length - 1]?.id ?? null }), {
         headers: { "Content-Type": "application/json" }
       });
     }
@@ -329,7 +342,9 @@ Bun.serve({
     const stream = body.stream ?? false;
     const rawModel = (body.model as string | undefined) ?? DEFAULT_MODEL;
     const providerName = detectProvider(rawModel);
-    const modelId = stripPrefix(rawModel);
+    const modelId = providerName === "copilot"
+      ? normalizeCopilotModel(stripPrefix(rawModel))
+      : stripPrefix(rawModel);
     const openaiMessages = toOpenAIMessages(body.messages ?? [], body.system);
     const openaiTools = toOpenAITools(body.tools);
 

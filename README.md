@@ -1,65 +1,71 @@
-# LLM Gateway — Claude Code Plugin
+# LLM Gateway
 
-Unified multi-provider LLM access for Claude Code. Use GitHub Copilot (GPT-4o, Claude, Gemini, o3), Kimi, MiniMax, and GLM from a single interface.
-
-## Features
-
-- **Manual mode**: Specify exact provider/model
-- **Auto mode**: Task-label routing with fallback chains
-- **Portable**: Credentials stored in `~/.llm-gateway/`, separate from plugin code
-- **4 providers**: GitHub Copilot, Moonshot Kimi, MiniMax, Zhipu GLM
+Use GitHub Copilot, Kimi, MiniMax, GLM, Qwen models as Claude Code's agent model.
 
 ## Install
 
 ```bash
-claude plugin marketplace add <your-github-user>/llm-gateway
-claude plugin install llm-gateway@<your-github-user>
+curl -fsSL https://raw.githubusercontent.com/SEUFSG/llm-gateway/master/install.sh | bash
 ```
 
-Or one-liner:
+Requirements: `bun` (or `node`), `git`, `claude` CLI.
+
+## Setup
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<user>/llm-gateway/main/install.sh | bash -s <user>
+# Interactive — authenticate all providers at once
+llm-auth setup
+
+# Or one by one
+llm-auth login copilot            # GitHub OAuth device flow
+llm-auth login kimi --key sk-xxx
+llm-auth login qwen --key sk-xxx
+llm-auth login minimax --key xxx
+llm-auth login glm --key xxx.xxx
+
+# Check status
+llm-auth status
+
+# List all available models
+llm-auth models
 ```
-
-## Authenticate
-
-After install, in any Claude Code session:
-
-- "login to copilot" → OAuth Device Flow (browser)
-- "login to kimi" → paste your [Moonshot API key](https://platform.moonshot.cn/)
-- "login to minimax" → paste your [MiniMax API key](https://api.minimax.chat/)
-- "login to glm" → paste your [GLM API key](https://open.bigmodel.cn/)
 
 ## Usage
 
-**Manual (precise):**
-> "Ask GPT-4o to review this code"
-> "Use Claude Sonnet 4 via Copilot to summarize this"
-
-**Auto (task-based routing):**
-> "Use the best available model to translate this to Chinese"
-> "Solve this math problem with the strongest reasoning model available"
-
-## Routing Configuration
-
-Add to `.claude/settings.json`:
-```json
-{
-  "llm-gateway": {
-    "routing": {
-      "code_generation": ["copilot/gpt-4o", "copilot/claude-sonnet-4", "glm/glm-4"],
-      "chinese_writing": ["kimi/moonshot-v1-128k", "glm/glm-4"],
-      "reasoning":       ["copilot/o3-mini", "copilot/gpt-4o"]
-    }
-  }
-}
+```bash
+# Start Claude Code with a specific model
+claude --model copilot/claude-opus-4.7
+claude --model copilot/gpt-5.4
+claude --model copilot/gpt-4o
+claude --model kimi/kimi-latest
+claude --model qwen/qwen-max
+claude --model glm/glm-4-plus
+claude --model minimax/MiniMax-Text-01
 ```
 
-## Providers & Models
+Model IDs always use `provider/model` format to avoid conflicts between providers.
 
-| Provider | Auth | Key Models |
-|----------|------|-----------|
-| GitHub Copilot | OAuth Device | gpt-4o, claude-sonnet-4, o3-mini, gemini-2.0-flash |
-| Kimi | API Key | moonshot-v1-8k/32k/128k |
-| MiniMax | API Key | abab6.5-chat, abab5.5-chat |
-| GLM | API Key | glm-4, glm-4-flash, glm-3-turbo |
+## Supported Providers
+
+| Provider | Auth Method | Example Models |
+|----------|-------------|----------------|
+| GitHub Copilot | OAuth Device Flow | claude-opus-4.7, claude-sonnet-4.6, gpt-5.4, gpt-4o, gemini-2.5-pro, grok-code-fast-1 |
+| Moonshot Kimi | API Key | kimi-latest, kimi-thinking-preview, moonshot-v1-128k |
+| Alibaba Qwen | API Key | qwen3-235b-a22b, qwen-max, qwen-plus, qwen2.5-coder-32b-instruct |
+| MiniMax | API Key | MiniMax-Text-01, abab6.5-chat |
+| Zhipu GLM | API Key | glm-z1-preview, glm-4-plus, glm-4-flash |
+
+## How It Works
+
+1. **`llm-auth`** manages credentials in `~/.llm-gateway/credentials.json`
+2. **Proxy server** (`localhost:3456`) translates Anthropic API format to each provider's API
+3. **`ANTHROPIC_BASE_URL`** points Claude Code to the proxy
+4. **SessionStart hook** auto-starts the proxy when Claude Code launches
+
+## Uninstall
+
+```bash
+claude mcp remove llm-gateway -s user
+rm -rf ~/.local/share/llm-gateway ~/.local/bin/llm-auth ~/.llm-gateway
+# Remove ANTHROPIC_BASE_URL and SessionStart hook from ~/.claude/settings.json
+```
