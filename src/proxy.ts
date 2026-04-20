@@ -358,8 +358,8 @@ Bun.serve({
       messages: openaiMessages,
       stream
     };
-    // o-series and codex models use max_completion_tokens instead of max_tokens
-    const usesCompletionTokens = /^o\d|codex/i.test(modelId);
+    // o-series, codex, and gpt-5.x models use max_completion_tokens instead of max_tokens
+    const usesCompletionTokens = /^o\d|codex|^gpt-5/i.test(modelId);
     if (usesCompletionTokens) {
       openaiBody.max_completion_tokens = body.max_tokens ?? 16000;
     } else {
