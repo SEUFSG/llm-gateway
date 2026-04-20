@@ -28,25 +28,61 @@ async function cmdStatus() {
 }
 
 async function cmdModels() {
-  const providers = registry.authenticatedProviders();
-  if (providers.length === 0) {
-    console.error("No providers authenticated. Run: llm-auth setup");
-    process.exit(1);
-  }
   console.log("\nAvailable models (use with: claude --model <id>)\n");
-  const seen = new Set<string>();
-  for (const p of providers) {
-    console.log(`  [${p.displayName}]`);
-    for (const m of p.listModels()) {
-      // Always use provider/model-id format to avoid conflicts
-      const id = m.fullId; // e.g. "copilot/gpt-4o"
-      if (!seen.has(id)) {
-        seen.add(id);
-        console.log(`    ${id.padEnd(45)} ${m.name}`);
+  try {
+    // Fetch actual models from proxy's /v1/models endpoint
+    const resp = await fetch("http://localhost:3456/v1/models");
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json() as { data: any[] };
+
+    // Group by provider prefix
+    const byProvider: Record<string, any[]> = {};
+    for (const m of data.data ?? []) {
+      const parts = (m.id as string).split("/");
+      const prov = parts.length > 1 ? parts[0] : "copilot";
+      (byProvider[prov] ??= []).push(m);
+    }
+
+    for (const [prov, models] of Object.entries(byProvider)) {
+      const label = prov === "copilot" ? "GitHub Copilot"
+        : prov === "kimi" ? "Moonshot Kimi"
+        : prov === "minimax" ? "MiniMax"
+        : prov === "glm" ? "Zhipu GLM"
+        : prov === "qwen" ? "Alibaba Qwen"
+        : prov;
+      console.log(`  [${label}]`);
+      for (const m of models) {
+        const fullId = m.id as string;
+        const slashIdx = fullId.indexOf("/");
+        const bareId = slashIdx !== -1 ? fullId.slice(slashIdx + 1) : fullId;
+        // Strip bracketed provider prefix and any leading provider name from name
+        let rawName = m.name ?? bareId;
+        rawName = rawName.replace(/^\[[^\]]+\]\s*/, "").replace(new RegExp(`^${prov}[/:\\s]+`, "i"), "");
+        console.log(`    ${fullId.padEnd(45)} ${rawName}`);
       }
     }
+    console.log();
+  } catch {
+    // Fallback: use hardcoded lists if proxy not running
+    const providers = registry.authenticatedProviders();
+    if (providers.length === 0) {
+      console.error("Proxy not running and no providers authenticated. Start proxy or run: llm-auth setup");
+      process.exit(1);
+    }
+    console.log("  (proxy offline — showing cached model list)\n");
+    const seen = new Set<string>();
+    for (const p of providers) {
+      console.log(`  [${p.displayName}]`);
+      for (const m of p.listModels()) {
+        const id = m.fullId;
+        if (!seen.has(id)) {
+          seen.add(id);
+          console.log(`    ${id.padEnd(45)} ${m.name}`);
+        }
+      }
+    }
+    console.log();
   }
-  console.log();
 }
 
 async function loginCopilot() {
