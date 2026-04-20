@@ -1,4 +1,4 @@
-import type { ModelInfo, ChatRequest, ChatResponse, AuthResult } from "../types";
+import type { ModelInfo, ChatRequest, ChatResponse, AuthResult, MinimaxCredentials } from "../types";
 import type { TokenStore } from "../token-store";
 
 const MINIMAX_MODELS: Omit<ModelInfo, "provider" | "fullId">[] = [
@@ -8,26 +8,34 @@ const MINIMAX_MODELS: Omit<ModelInfo, "provider" | "fullId">[] = [
   { id: "abab6.5-chat",    name: "abab6.5",          contextWindow: 245760,  maxOutput: 8192,  tags: ["chinese_writing","quick_qa","creative"],                   description: "MiniMax abab6.5 旗舰" },
 ];
 
+const ENDPOINTS = {
+  cn: "https://api.minimax.chat/v1/chat/completions",
+  global: "https://platform.minimax.io/v1/chat/completions",
+} as const;
+
 export class MinimaxProvider {
   readonly name = "minimax";
   readonly displayName = "MiniMax";
   readonly authType = "api_key" as const;
 
-  private readonly API_URL = "https://platform.minimax.io/v1/chat/completions";
-
   constructor(private readonly store: TokenStore) {}
 
+  private getEndpoint(): string {
+    const creds = this.store.load().minimax;
+    return ENDPOINTS[creds?.region ?? "global"];
+  }
+
   isAuthenticated(): boolean {
-    const creds = this.store.load();
-    return !!creds.minimax?.apiKey;
+    return !!this.store.load().minimax?.apiKey;
   }
 
   listModels(): ModelInfo[] {
     return MINIMAX_MODELS.map(m => ({ ...m, provider: "minimax", fullId: `minimax/${m.id}` }));
   }
 
-  async login(apiKey: string): Promise<AuthResult> {
-    const resp = await fetch(this.API_URL, {
+  async login(apiKey: string, region: "cn" | "global" = "global"): Promise<AuthResult> {
+    const endpoint = ENDPOINTS[region];
+    const resp = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
@@ -42,8 +50,8 @@ export class MinimaxProvider {
     if (resp.status === 401) {
       return { success: false, message: "Invalid MiniMax API key" };
     }
-    this.store.update("minimax", { apiKey });
-    return { success: true, message: "MiniMax API key saved successfully" };
+    this.store.update("minimax", { apiKey, region } as MinimaxCredentials);
+    return { success: true, message: `MiniMax authenticated (${region === "cn" ? "国内" : "海外"})` };
   }
 
   logout(): void {
@@ -56,7 +64,7 @@ export class MinimaxProvider {
     const creds = this.store.load();
     if (!creds.minimax?.apiKey) throw new Error("MiniMax not authenticated. Run llm_login first.");
 
-    const resp = await fetch(this.API_URL, {
+    const resp = await fetch(this.getEndpoint(), {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${creds.minimax.apiKey}`,

@@ -2,11 +2,14 @@ import type { ModelInfo, ChatRequest, ChatResponse, AuthResult } from "../types"
 import type { TokenStore } from "../token-store";
 
 const KIMI_MODELS: Omit<ModelInfo, "provider" | "fullId">[] = [
-  { id: "kimi-latest",             name: "Kimi Latest",          contextWindow: 131072,  maxOutput: 16384, tags: ["chinese_writing","translation","code_generation","reasoning"], description: "Kimi 最新旗舰模型" },
-  { id: "kimi-thinking-preview",   name: "Kimi Thinking",        contextWindow: 131072,  maxOutput: 16384, tags: ["reasoning","math","chinese_writing"],                          description: "Kimi 深度思考模型" },
-  { id: "moonshot-v1-128k",        name: "Moonshot v1 128K",     contextWindow: 128000,  maxOutput: 16384, tags: ["chinese_writing","translation","long_context"],                description: "Kimi 128K 长文档" },
-  { id: "moonshot-v1-32k",         name: "Moonshot v1 32K",      contextWindow: 32000,   maxOutput: 8192,  tags: ["chinese_writing","translation"],                               description: "Kimi 32K 均衡" },
-  { id: "moonshot-v1-8k",          name: "Moonshot v1 8K",       contextWindow: 8000,    maxOutput: 4096,  tags: ["chinese_writing","quick_qa"],                                  description: "Kimi 8K 快速" },
+  { id: "kimi-k2.5",              name: "Kimi K2.5",            contextWindow: 131072,  maxOutput: 16384, tags: ["chinese_writing","reasoning","code_generation"],              description: "Kimi K2.5 最新旗舰" },
+  { id: "kimi-k2-thinking",      name: "Kimi K2 Thinking",     contextWindow: 131072,  maxOutput: 16384, tags: ["reasoning","math","chinese_writing"],                         description: "Kimi K2 深度思考" },
+  { id: "kimi-k2-thinking-turbo", name: "Kimi K2 Thinking Turbo", contextWindow: 131072, maxOutput: 16384, tags: ["reasoning","math","quick_qa"],                             description: "Kimi K2 快速思考" },
+  { id: "kimi-k2-turbo-preview", name: "Kimi K2 Turbo",        contextWindow: 131072,  maxOutput: 16384, tags: ["code_generation","quick_qa","chinese_writing"],               description: "Kimi K2 Turbo 快速" },
+  { id: "moonshot-v1-128k",      name: "Moonshot v1 128K",     contextWindow: 128000,  maxOutput: 16384, tags: ["chinese_writing","translation","long_context"],               description: "Moonshot 128K 长文档" },
+  { id: "moonshot-v1-32k",       name: "Moonshot v1 32K",      contextWindow: 32000,   maxOutput: 8192,  tags: ["chinese_writing","translation"],                              description: "Moonshot 32K 均衡" },
+  { id: "moonshot-v1-8k",        name: "Moonshot v1 8K",       contextWindow: 8000,    maxOutput: 4096,  tags: ["chinese_writing","quick_qa"],                                 description: "Moonshot 8K 快速" },
+  { id: "moonshot-v1-auto",      name: "Moonshot v1 Auto",     contextWindow: 128000,  maxOutput: 16384, tags: ["chinese_writing","translation"],                              description: "Moonshot 自动选择上下文" },
 ];
 
 export class KimiProvider {

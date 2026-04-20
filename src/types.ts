@@ -53,10 +53,15 @@ export interface ApiKeyCredentials {
   apiKey: string;
 }
 
+export interface MinimaxCredentials {
+  apiKey: string;
+  region: "cn" | "global";
+}
+
 export interface Credentials {
   copilot?: CopilotCredentials;
   kimi?: ApiKeyCredentials;
-  minimax?: ApiKeyCredentials;
+  minimax?: MinimaxCredentials;
   glm?: ApiKeyCredentials;
   qwen?: ApiKeyCredentials;
 }

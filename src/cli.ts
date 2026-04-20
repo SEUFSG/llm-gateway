@@ -90,6 +90,45 @@ async function loginApiKey(providerName: string, apiKey?: string) {
   }
 }
 
+function readLine(prompt: string): string {
+  process.stdout.write(prompt);
+  let line = "";
+  const buf = Buffer.alloc(1024);
+  while (true) {
+    const n = require("fs").readSync(0, buf, 0, 1, null);
+    if (n === 0) break;
+    const ch = buf.toString("utf8", 0, n);
+    if (ch === "\n") break;
+    line += ch;
+  }
+  return line.trim();
+}
+
+async function loginMinimax(apiKey?: string) {
+  const p = registry.getProvider("minimax")!;
+  // Ask region
+  console.log("\nMiniMax region:");
+  console.log("  1) 海外 (platform.minimax.io)");
+  console.log("  2) 国内 (api.minimax.chat)");
+  const choice = readLine("Select [1/2]: ");
+  const region: "cn" | "global" = choice === "2" ? "cn" : "global";
+
+  if (!apiKey) {
+    apiKey = readLine(`Enter MiniMax API key: `);
+  }
+  if (!apiKey) {
+    console.error("No API key provided.");
+    process.exit(1);
+  }
+  const result = await (p as any).login(apiKey, region);
+  if (result.success) {
+    console.log(`✅ ${result.message}`);
+  } else {
+    console.error(`❌ Failed: ${result.message}`);
+    process.exit(1);
+  }
+}
+
 async function cmdLogin(providerName: string, apiKey?: string) {
   if (!PROVIDERS.includes(providerName as any)) {
     console.error(`Unknown provider: ${providerName}. Valid: ${PROVIDERS.join(", ")}`);
@@ -97,6 +136,8 @@ async function cmdLogin(providerName: string, apiKey?: string) {
   }
   if (providerName === "copilot") {
     await loginCopilot();
+  } else if (providerName === "minimax") {
+    await loginMinimax(apiKey);
   } else {
     await loginApiKey(providerName, apiKey);
   }
@@ -134,12 +175,22 @@ async function cmdSetup() {
       console.log(`✅ ${p.displayName} already authenticated, skipping.`);
       continue;
     }
-    process.stdout.write(`\n${p.displayName} API key (Enter to skip): `);
-    const key = prompt("");
-    if (key && key.trim()) {
-      await loginApiKey(name, key.trim());
+    if (name === "minimax") {
+      process.stdout.write(`\n${p.displayName} API key (Enter to skip): `);
+      const key = prompt("");
+      if (key && key.trim()) {
+        await loginMinimax(key.trim());
+      } else {
+        console.log(`  Skipped ${p.displayName}`);
+      }
     } else {
-      console.log(`  Skipped ${p.displayName}`);
+      process.stdout.write(`\n${p.displayName} API key (Enter to skip): `);
+      const key = prompt("");
+      if (key && key.trim()) {
+        await loginApiKey(name, key.trim());
+      } else {
+        console.log(`  Skipped ${p.displayName}`);
+      }
     }
   }
 

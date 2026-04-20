@@ -79,17 +79,23 @@ async function routeToProvider(providerName: string, modelId: string, openaiBody
 
   if (providerName === "kimi") {
     if (!creds.kimi?.apiKey) throw new Error("Kimi not authenticated");
+    const kimiBody = { ...openaiBody, model: modelId };
+    // kimi-k2* models only accept temperature=1
+    if (modelId.startsWith("kimi-k2")) kimiBody.temperature = 1;
     return fetch("https://api.moonshot.cn/v1/chat/completions", {
       method: "POST",
       headers: { "Authorization": `Bearer ${creds.kimi.apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ ...openaiBody, model: modelId })
+      body: JSON.stringify(kimiBody)
     });
   }
 
   if (providerName === "minimax") {
     if (!creds.minimax?.apiKey) throw new Error("MiniMax not authenticated");
     const body = { ...openaiBody, model: modelId };
-    return fetch("https://platform.minimax.io/v1/chat/completions", {
+    const endpoint = creds.minimax.region === "cn"
+      ? "https://api.minimax.chat/v1/chat/completions"
+      : "https://platform.minimax.io/v1/chat/completions";
+    return fetch(endpoint, {
       method: "POST",
       headers: { "Authorization": `Bearer ${creds.minimax.apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify(body)
