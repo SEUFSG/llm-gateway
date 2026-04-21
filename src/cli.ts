@@ -9,8 +9,8 @@ import { ProviderRegistry } from "./registry";
 const store = new TokenStore();
 const registry = new ProviderRegistry(store);
 
-const PROVIDERS = ["copilot", "kimi", "minimax", "glm", "qwen"] as const;
-const API_KEY_PROVIDERS = ["kimi", "minimax", "glm", "qwen"] as const;
+const PROVIDERS = ["copilot", "kimi", "minimax", "glm", "qwen", "kimi-code"] as const;
+const API_KEY_PROVIDERS = ["kimi", "minimax", "glm", "qwen", "kimi-code"] as const;
 
 function statusRow(name: string, auth: boolean, models: number) {
   const icon = auth ? "✅" : "❌";
@@ -174,6 +174,8 @@ async function cmdLogin(providerName: string, apiKey?: string) {
     await loginCopilot();
   } else if (providerName === "minimax") {
     await loginMinimax(apiKey);
+  } else if (providerName === "kimi-code") {
+    await loginApiKey(providerName, apiKey);
   } else {
     await loginApiKey(providerName, apiKey);
   }

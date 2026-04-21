@@ -64,6 +64,7 @@ export interface Credentials {
   minimax?: MinimaxCredentials;
   glm?: ApiKeyCredentials;
   qwen?: ApiKeyCredentials;
+  kimiCode?: ApiKeyCredentials;
 }
 
 /** Maps task label (e.g. "code_generation") to ordered fallback chain of fullIds (e.g. ["copilot/gpt-4o", "glm/glm-4"]) */

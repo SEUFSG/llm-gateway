@@ -48,6 +48,7 @@ async function fetchCopilotModels(token: string): Promise<any[]> {
 
 // Detect which provider to use based on model ID prefix or known model IDs
 function detectProvider(model: string): string {
+  if (model.startsWith("kimi-code/")) return "kimi-code";
   if (model.startsWith("kimi/") || model.startsWith("moonshot-") || model.startsWith("kimi-")) return "kimi";
   if (model.startsWith("minimax/") || model.startsWith("abab") || model.startsWith("MiniMax-")) return "minimax";
   if (model.startsWith("glm/") || model.startsWith("glm-") || model.startsWith("chatglm")) return "glm";
@@ -60,7 +61,7 @@ function stripPrefix(model: string): string {
   const slash = model.indexOf("/");
   if (slash !== -1) {
     const prefix = model.substring(0, slash);
-    if (["copilot","kimi","minimax","glm","qwen"].includes(prefix)) return model.substring(slash + 1);
+    if (["copilot","kimi","minimax","glm","qwen","kimi-code"].includes(prefix)) return model.substring(slash + 1);
   }
   return model;
 }
@@ -86,6 +87,20 @@ async function routeToProvider(providerName: string, modelId: string, openaiBody
       method: "POST",
       headers: { "Authorization": `Bearer ${creds.kimi.apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify(kimiBody)
+    });
+  }
+
+  if (providerName === "kimi-code") {
+    const apiKey = (creds as any).kimiCode?.apiKey;
+    if (!apiKey) throw new Error("Kimi Code not authenticated. Run llm-auth login kimi-code");
+    return fetch("https://api.kimi.com/coding/v1/messages", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "anthropic-version": "2023-06-01"
+      },
+      body: JSON.stringify({ ...openaiBody, model: modelId })
     });
   }
 
@@ -386,6 +401,30 @@ Bun.serve({
       const errText = await providerResp.text();
       return new Response(JSON.stringify({ error: { message: errText, type: "api_error" } }), {
         status: providerResp.status, headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    // kimi-code returns Anthropic format — convert to OpenAI for toAnthropicResponse
+    if (providerName === "kimi-code") {
+      const raw = await providerResp.json();
+      const anthropicToOpenAI = (anthropic: any) => ({
+        id: anthropic.id,
+        object: "chat.completion",
+        created: Date.now(),
+        model: anthropic.model,
+        choices: [{
+          index: 0,
+          message: { role: "assistant", content: anthropic.content?.find((c: any) => c.type === "text")?.text ?? "" },
+          finish_reason: anthropic.stop_reason === "end_turn" ? "stop" : anthropic.stop_reason
+        }],
+        usage: anthropic.usage ? {
+          prompt_tokens: anthropic.usage.input_tokens,
+          completion_tokens: anthropic.usage.output_tokens,
+          total_tokens: (anthropic.usage.input_tokens ?? 0) + (anthropic.usage.output_tokens ?? 0)
+        } : undefined
+      });
+      return new Response(JSON.stringify(toAnthropicResponse(anthropicToOpenAI(raw), rawModel)), {
+        headers: { "Content-Type": "application/json" }
       });
     }
 
