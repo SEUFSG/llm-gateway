@@ -3,6 +3,7 @@ import type { TokenStore } from "../token-store";
 
 const KIMI_MODELS: Omit<ModelInfo, "provider" | "fullId">[] = [
   { id: "kimi-k2.5",              name: "Kimi K2.5",            contextWindow: 131072,  maxOutput: 16384, tags: ["chinese_writing","reasoning","code_generation"],              description: "Kimi K2.5 最新旗舰" },
+  { id: "kimi-k2.6",              name: "Kimi K2.6",            contextWindow: 131072,  maxOutput: 16384, tags: ["chinese_writing","reasoning","code_generation"],              description: "Kimi K2.6 旗舰升级" },
   { id: "kimi-k2-thinking",      name: "Kimi K2 Thinking",     contextWindow: 131072,  maxOutput: 16384, tags: ["reasoning","math","chinese_writing"],                         description: "Kimi K2 深度思考" },
   { id: "kimi-k2-thinking-turbo", name: "Kimi K2 Thinking Turbo", contextWindow: 131072, maxOutput: 16384, tags: ["reasoning","math","quick_qa"],                             description: "Kimi K2 快速思考" },
   { id: "kimi-k2-turbo-preview", name: "Kimi K2 Turbo",        contextWindow: 131072,  maxOutput: 16384, tags: ["code_generation","quick_qa","chinese_writing"],               description: "Kimi K2 Turbo 快速" },
