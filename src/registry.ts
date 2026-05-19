@@ -5,9 +5,10 @@ import { MinimaxProvider } from "./providers/minimax";
 import { GlmProvider } from "./providers/glm";
 import { QwenProvider } from "./providers/qwen";
 import { KimiCodeProvider } from "./providers/kimi-code";
+import { CustomProvider } from "./providers/custom";
 import type { TokenStore } from "./token-store";
 
-type AnyProvider = CopilotProvider | KimiProvider | MinimaxProvider | GlmProvider | QwenProvider | KimiCodeProvider;
+type AnyProvider = CopilotProvider | KimiProvider | MinimaxProvider | GlmProvider | QwenProvider | KimiCodeProvider | CustomProvider;
 
 export class ProviderRegistry {
   private readonly providers: Map<string, AnyProvider>;
@@ -19,7 +20,8 @@ export class ProviderRegistry {
       ["minimax", new MinimaxProvider(store)],
       ["glm", new GlmProvider(store)],
       ["qwen", new QwenProvider(store)],
-      ["kimi-code", new KimiCodeProvider(store)]
+      ["kimi-code", new KimiCodeProvider(store)],
+      ["custom", new CustomProvider(store)]
     ]);
   }
 

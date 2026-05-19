@@ -65,6 +65,7 @@ export interface Credentials {
   glm?: ApiKeyCredentials;
   qwen?: ApiKeyCredentials;
   kimiCode?: ApiKeyCredentials;
+  custom?: ApiKeyCredentials;
 }
 
 /** Maps task label (e.g. "code_generation") to ordered fallback chain of fullIds (e.g. ["copilot/gpt-4o", "glm/glm-4"]) */

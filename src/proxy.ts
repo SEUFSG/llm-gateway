@@ -49,6 +49,7 @@ async function fetchCopilotModels(token: string): Promise<any[]> {
 // Detect which provider to use based on model ID prefix or known model IDs
 function detectProvider(model: string): string {
   if (model.startsWith("kimi-code/")) return "kimi-code";
+  if (model.startsWith("custom/")) return "custom";
   if (model.startsWith("kimi/") || model.startsWith("moonshot-") || model.startsWith("kimi-")) return "kimi";
   if (model.startsWith("minimax/") || model.startsWith("abab") || model.startsWith("MiniMax-")) return "minimax";
   if (model.startsWith("glm/") || model.startsWith("glm-") || model.startsWith("chatglm")) return "glm";
@@ -61,7 +62,7 @@ function stripPrefix(model: string): string {
   const slash = model.indexOf("/");
   if (slash !== -1) {
     const prefix = model.substring(0, slash);
-    if (["copilot","kimi","minimax","glm","qwen","kimi-code"].includes(prefix)) return model.substring(slash + 1);
+    if (["copilot","kimi","minimax","glm","qwen","kimi-code","custom"].includes(prefix)) return model.substring(slash + 1);
   }
   return model;
 }
@@ -135,6 +136,17 @@ async function routeToProvider(providerName: string, modelId: string, openaiBody
       headers: { "Authorization": `Bearer ${creds.qwen.apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ ...openaiBody, model: modelId })
     });
+  }
+
+  if (providerName === "custom") {
+    if (!creds.custom?.apiKey) throw new Error("Custom gateway not authenticated");
+    const baseUrl = process.env.LLM_CUSTOM_BASE_URL ?? "https://103.236.97.252:32456";
+    return fetch(`${baseUrl}/v1/chat/completions`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${creds.custom.apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ ...openaiBody, model: modelId }),
+      tls: { rejectUnauthorized: false }
+    } as any);
   }
 
   // Default: copilot
@@ -330,10 +342,20 @@ Bun.serve({
         }));
       } catch {}
 
-      // Other authenticated providers (static model lists)
-      const otherModels = registry.authenticatedProviders()
-        .filter(p => p.name !== "copilot")
-        .flatMap(p => p.listModels().map(m => ({
+      // Other authenticated providers (static lists plus dynamic custom models)
+      const authenticatedProviders = registry.authenticatedProviders().filter(p => p.name !== "copilot");
+      const otherModels = [];
+      for (const p of authenticatedProviders) {
+        let models: any[] = [];
+        try {
+          models = p.name === "custom" && "fetchModels" in p
+            ? await (p as any).fetchModels()
+            : p.listModels();
+        } catch (e) {
+          process.stderr.write(`[proxy] failed to list models for ${p.name}: ${String(e)}\n`);
+          continue;
+        }
+        otherModels.push(...models.map(m => ({
           id: m.fullId,
           object: "model",
           name: `[${p.displayName}] ${m.name}`,
@@ -343,6 +365,7 @@ Bun.serve({
           model_picker_enabled: true,
           model_picker_category: "versatile"
         })));
+      }
 
       const data = [...copilotModels, ...otherModels];
       return new Response(JSON.stringify({ object: "list", data, has_more: false, first_id: data[0]?.id ?? null, last_id: data[data.length - 1]?.id ?? null }), {

@@ -9,8 +9,8 @@ import { ProviderRegistry } from "./registry";
 const store = new TokenStore();
 const registry = new ProviderRegistry(store);
 
-const PROVIDERS = ["copilot", "kimi", "minimax", "glm", "qwen", "kimi-code"] as const;
-const API_KEY_PROVIDERS = ["kimi", "minimax", "glm", "qwen", "kimi-code"] as const;
+const PROVIDERS = ["copilot", "kimi", "minimax", "glm", "qwen", "kimi-code", "custom"] as const;
+const API_KEY_PROVIDERS = ["kimi", "minimax", "glm", "qwen", "kimi-code", "custom"] as const;
 
 function statusRow(name: string, auth: boolean, models: number) {
   const icon = auth ? "✅" : "❌";
@@ -49,6 +49,7 @@ async function cmdModels() {
         : prov === "minimax" ? "MiniMax"
         : prov === "glm" ? "Zhipu GLM"
         : prov === "qwen" ? "Alibaba Qwen"
+        : prov === "custom" ? "Custom Gateway"
         : prov;
       console.log(`  [${label}]`);
       for (const m of models) {

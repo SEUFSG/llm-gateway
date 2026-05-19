@@ -166,8 +166,8 @@ if (import.meta.main) {
         inputSchema: {
           type: "object",
           properties: {
-            provider: { type: "string", enum: ["copilot", "kimi", "minimax", "glm", "qwen"] },
-            apiKey: { type: "string", description: "Required for kimi, minimax, glm, qwen" }
+            provider: { type: "string", enum: ["copilot", "kimi", "minimax", "glm", "qwen", "custom"] },
+            apiKey: { type: "string", description: "Required for kimi, minimax, glm, qwen, custom" }
           },
           required: ["provider"]
         }
@@ -178,7 +178,7 @@ if (import.meta.main) {
         inputSchema: {
           type: "object",
           properties: {
-            provider: { type: "string", enum: ["copilot", "kimi", "minimax", "glm", "qwen"] }
+            provider: { type: "string", enum: ["copilot", "kimi", "minimax", "glm", "qwen", "custom"] }
           },
           required: ["provider"]
         }
